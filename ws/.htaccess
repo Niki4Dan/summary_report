@@ -1,0 +1,5 @@
+<FilesMatch "\.(env)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+

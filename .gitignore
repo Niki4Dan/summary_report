@@ -1,0 +1,7 @@
+*.log
+*.lock
+*.pdf
+
+.env
+
+node_modules
