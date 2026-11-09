@@ -897,8 +897,8 @@ function getManagersHTML($data, ?mysqli $connection = null)
                   <td class="small">' . ($mData['COUNT_IN_WORK_LEADS'] ?? 0) . '</td>
                   <td class="small">' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
                   <td class="small">' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
-                  <td class="small">' . ($mData['AVG_TIME']            ?? '0 ч. 0 мин.') . '</td>
-                  <td class="small">' . ($mData['TOTAL_TIME']          ?? '0 ч 0 мин') . '</td>
+<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['AVG_TIME']   ?? '')) . '</td>
+<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['TOTAL_TIME'] ?? '')) . '</td>
               </tr>';
         }
         $k++;
@@ -1624,24 +1624,23 @@ function getWorkTime($dateStart, $dateEnd)
 
 function formatTime($totalMinutes)
 {
-    $hours   = (int)floor($totalMinutes / 60);
-    $minutes = $totalMinutes % 60;
-    return $hours . ' ч ' . $minutes . ' мин';
+    $totalMinutes     = (int)round($totalMinutes);
+    $WORK_DAY_MINUTES = 8 * 60; // 480 мин = 1 рабочий день
+
+    $days    = intdiv($totalMinutes, $WORK_DAY_MINUTES);
+    $rest    = $totalMinutes % $WORK_DAY_MINUTES;
+    $hours   = intdiv($rest, 60);
+    $minutes = $rest % 60;
+
+    return $days . ' дн. ' . $hours . ' ч. ' . $minutes . ' мин.';
 }
 
 function getAvgTime($countLeads, $totalTime)
 {
     if ($countLeads === 0) {
-        return '0 ч. 0 мин.';
+        return '0 дн. 0 ч. 0 мин.';
     }
-    $avg     = $totalTime / $countLeads;
-    $hours   = (int)floor($avg / 60);
-    $minutes = (int)round($avg % 60);
-    if ($minutes >= 60) {
-        $hours  += intdiv($minutes, 60);
-        $minutes = $minutes % 60;
-    }
-    return $hours . ' ч. ' . $minutes . ' мин.';
+    return formatTime($totalTime / $countLeads);
 }
 
 
@@ -2210,4 +2209,20 @@ function getContactsByManagerCounts(mysqli $connection, string $periodStart, str
     }
 
     return $cache[$ck] = ['MANAGERS' => $result];
+}
+
+/**
+ * Парсит уже отформатированную строку ("7 ч 30 мин", "25 ч 0 мин",
+ * "3 дн. 1 ч. 0 мин.") обратно в минуты. 1 день = 8 ч.
+ */
+function parseFormattedTimeToMinutes($formatted): int
+{
+    if (!is_string($formatted) || $formatted === '') {
+        return 0;
+    }
+    $minutes = 0;
+    if (preg_match('/(\d+)\s*дн/u',  $formatted, $m)) $minutes += (int)$m[1] * 8 * 60;
+    if (preg_match('/(\d+)\s*ч/u',   $formatted, $m)) $minutes += (int)$m[1] * 60;
+    if (preg_match('/(\d+)\s*мин/u', $formatted, $m)) $minutes += (int)$m[1];
+    return $minutes;
 }

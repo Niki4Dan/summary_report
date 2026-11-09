@@ -46,7 +46,7 @@ define('PASSWORD_SMTP', $_ENV['PASSWORD_SMTP']);
 putenv('PATH=/usr/local/bin:/usr/bin:/bin:/home/bitrix/.nvm/versions/node/v18.19.0/bin:' . getenv('PATH'));
 $config = [
     'debug' => true,  // true - логировать в файл, false - только вывод в консоль
-    
+
     // SMTP настройки
     'smtp' => [
         'host' => 'smtp.yandex.ru',
@@ -58,15 +58,15 @@ $config = [
         'from' => USERNAME_SMTP,
         'from_name' => 'IT-отдел'
     ],
-    
+
     // Список получателей
     'recipients' => [
         'nikiforov_d@flotenk.ru',
         'ydaniil256@yandex.ru',
-/*         'borovikov@flotenk.ru',
+        /*         'borovikov@flotenk.ru',
         'yefimova@flotenk.ru' */
     ],
-    
+
     // Настройки отчета
     'report' => [
         'subject' => 'Еженедельный отчет',
@@ -77,20 +77,21 @@ $config = [
 
 // ==================== НАЧАЛО СКРИПТА ====================
 
-$url = 'http://b24.flotenk.ru/local/summary_report/createPdf.php?pdf=1&script=1';
+$url = 'http://localhost/local/summary_report/createPdf.php?pdf=1&script=1';
 $scriptDir = __DIR__;
 $outputFile = $scriptDir . '/' . $config['report']['filename'];
 $logFile = $scriptDir . '/report_generator.log';
 
-function logMessage($message, $level = 'INFO') {
+function logMessage($message, $level = 'INFO')
+{
     global $config, $logFile;
-    
+
     $timestamp = date('Y-m-d H:i:s');
     $logLine = "[$timestamp] [$level] $message\n";
-    
+
     // Всегда выводим в консоль
     echo $logLine;
-    
+
     // Если debug включен - пишем в файл
     if ($config['debug']) {
         file_put_contents($logFile, $logLine, FILE_APPEND);
@@ -119,7 +120,10 @@ if (!$hasNodemailer) {
 
 // Создаем PHP-скрипт для формирования JS
 $jsScript = <<<'JS'
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+puppeteer.use(StealthPlugin());
 const fs = require('fs');
 
 const url = process.argv[2];
@@ -132,11 +136,13 @@ console.log('🔄 Запуск браузера...');
     try {
         browser = await puppeteer.launch({
             headless: 'new',
+            ignoreHTTPSErrors: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
-                '--disable-gpu'
+                '--disable-gpu',
+                '--ignore-certificate-errors'
             ]
         });
 
@@ -149,6 +155,14 @@ console.log('🔄 Запуск браузера...');
         });
 
         console.log('📄 Загрузка страницы...');
+
+await page.setUserAgent(
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+    'Chrome/120.0.0.0 Safari/537.36'
+);
+
+
+await page.setExtraHTTPHeaders({ Host: 'b24.flotenk.ru' });
         
         await page.goto(url, {
             waitUntil: 'domcontentloaded',
@@ -244,12 +258,12 @@ unlink($tempScript);
 if ($exitCode === 0 && file_exists($outputFile) && filesize($outputFile) > 0) {
     $size = filesize($outputFile);
     logMessage("✅ PDF файл создан: $outputFile", "SUCCESS");
-    logMessage("📄 Размер: $size байт (" . round($size/1024, 2) . "KB)", "SUCCESS");
-    
+    logMessage("📄 Размер: $size байт (" . round($size / 1024, 2) . "KB)", "SUCCESS");
+
     // ==================== ОТПРАВКА ПО EMAIL ====================
     if ($hasNodemailer) {
         logMessage("📧 Отправка отчета по email...");
-        
+
         // Экранируем данные для JSON
         $smtpConfig = [
             'host' => $config['smtp']['host'],
@@ -258,7 +272,7 @@ if ($exitCode === 0 && file_exists($outputFile) && filesize($outputFile) > 0) {
             'username' => $config['smtp']['username'],
             'password' => $config['smtp']['password']
         ];
-        
+
         $recipientsJson = json_encode($config['recipients']);
         $smtpJson = json_encode($smtpConfig);
         $subjectJson = json_encode($config['report']['subject']);
@@ -267,7 +281,7 @@ if ($exitCode === 0 && file_exists($outputFile) && filesize($outputFile) > 0) {
         $fromJson = json_encode($config['smtp']['from']);
         $fromNameJson = json_encode($config['smtp']['from_name']);
         $filePathJson = json_encode($outputFile);
-        
+
         // Создаем email скрипт
         $emailScript = <<<JS
 const nodemailer = require('nodemailer');
@@ -348,13 +362,13 @@ JS;
         // Сохраняем email скрипт
         $tempEmailScript = $scriptDir . '/temp_email.js';
         file_put_contents($tempEmailScript, $emailScript);
-        
+
         logMessage("🔄 Запуск отправки email...");
-        
+
         // Запускаем отправку
         $emailCommand = "node " . escapeshellarg($tempEmailScript) . " 2>&1";
         exec($emailCommand, $emailOutput, $emailExitCode);
-        
+
         // Выводим результат отправки
         foreach ($emailOutput as $line) {
             echo $line . "\n";
@@ -362,12 +376,12 @@ JS;
                 file_put_contents($logFile, $line . "\n", FILE_APPEND);
             }
         }
-        
+
         // Удаляем временный скрипт
         if (file_exists($tempEmailScript)) {
             unlink($tempEmailScript);
         }
-        
+
         if ($emailExitCode === 0) {
             logMessage("✅ Отчет успешно отправлен по email", "SUCCESS");
         } else {
@@ -377,10 +391,9 @@ JS;
         logMessage("⚠️ Nodemailer не установлен. Пропускаем отправку email.", "WARNING");
         logMessage("Установите: npm install nodemailer", "WARNING");
     }
-    
+
     logMessage("✅ Скрипт завершен успешно", "SUCCESS");
     exit(0);
-    
 } else {
     logMessage("❌ Не удалось создать PDF", "ERROR");
     logMessage("Проверьте доступность URL: $url", "ERROR");

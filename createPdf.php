@@ -6,6 +6,10 @@ define('NO_KEEP_STATISTIC', true);
 define('NO_AGENT_CHECK', true);
 define('NO_LANG_FILES', true);
 
+if(isset($_GET['pdf']) || isset($_GET['script'])){
+    define("NOT_CHECK_PERMISSIONS", true);
+}
+
 $GLOBALS['RAW_POST_BODY'] = file_get_contents('php://input');
 require($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
 
