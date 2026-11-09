@@ -885,6 +885,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                         ?>
 
                         <?= $htmlReport  ?>
+                        <? if ($isWeb) { ?>
+                            <div style="margin-top:20pt;">
+                                <?= getSourcesTableHTML($sources, false) ?>
+                            </div>
+                        <? } ?>
                         <div class="no-parted pb-before pb-inside">
                             <h3 style="text-align: center;">Динамика количества лидов</h3>
                             <div class="chart-wrapper" style="padding-top:0;">
@@ -921,11 +926,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                             </div>
                         </div>
 
-                        <? if ($isWeb) { ?>
-                            <div style="margin-top:20pt;">
-                                <?= getSourcesTableHTML($sources, false) ?>
-                            </div>
-                        <? } ?>
+
 
                         <div style="margin-top:20pt; margin-bottom:30pt;">
                             <div class="table-wrapper">
@@ -1079,6 +1080,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 
                         <?= $htmlReport  ?>
+                        <div style="margin-top:20pt;">
+                            <?= getSourcesTableHTML($sources, false) ?>
+                        </div>
                         <table style="padding: 0; border:none; ">
                             <tr style="padding: 0; border:none;">
                                 <td style="padding: 0; width:65%; border:none; vertical-align:top;">
@@ -1119,9 +1123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                                 </div>
                             </div>
                         </div>
-                        <div style="margin-top:20pt;">
-                            <?= getSourcesTableHTML($sources, false) ?>
-                        </div>
+
 
                         <div style="margin-top:20pt; margin-bottom:30pt;">
                             <div class="table-wrapper">

@@ -422,8 +422,8 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
         <td rowspan="2">Нецелевой</td>
     </tr>
     <tr>
-        <td>ФЛТ</td>
-        <td>КЛНТ</td>
+        <td>ФЛ</td>
+        <td>Клиент</td>
     </tr>
     <tr>
         <td colspan="2" class="bold">Всего за неделю</td>
@@ -567,31 +567,7 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
                 </tr>
             </table>
 
-<table class="managers_table">
-    <tr>
-        <td class="th" rowspan="2">№</td>
-        <td class="th" rowspan="2">Ответственный</td>
-        <td class="th" rowspan="2">Общее число</td>
-        <td class="th" colspan="3">Качественные</td>
-        <td class="th" rowspan="2">В&nbsp;ожид.</td>
-        <td class="th" rowspan="2">Не&nbsp;обраб.</td>
-        <td class="th" rowspan="2">Нецелевой</td>
-        <td class="th" rowspan="2">Время</td>
-    </tr>
-    <tr>
-            <td class="th">I</td>
-        <td class="th">II</td>
-        <td class="th">III</td>
-
-    </tr>
-   ' . $managersHtml . '
-</table>
-
-
-
-
-                        <p class="quote" style="font-style:italic; text-align:center; font-size:8pt; margin:0;">' . htmlspecialchars($quoteText) . '</p>
-                        <div class="legend_table_managers">
+            <div class="legend_table_managers">
                             <table>
                                 <tr>
                                     <td><p><b>I</b> - Контакт/компания</p></td>
@@ -604,7 +580,41 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
                         
                         </div>
 
+<table class="managers_table">
+    <tr>
+        <td class="th" rowspan="2">№</td>
+        <td class="th" rowspan="2">Ответственный</td>
+        <td class="th" rowspan="2" style="width:50px;">Общее число</td>
+        <td class="th" colspan="3">Качеств.</td>
+         <td class="th" rowspan="2">В&nbsp;ожид.</td>
+        <td class="th" rowspan="2">Не&nbsp;обраб.</td>
+        <td class="th" rowspan="2">Нецелев.</td>
+        <td class="th" colspan="2">Время обработки</td>
+    </tr>
+    <tr>
+            <td class="th">I</td>
+        <td class="th">II</td>
+        <td class="th">III</td>
+        <td class="th" style="width:80px;">Среднее</td>
+        <td class="th" style="width:80px;">Общее</td>
+    </tr>
+   ' . $managersHtml . '
+</table>
+
+
+
+
+                        <p class="quote" style="font-style:italic; text-align:center; font-size:8pt; margin:0;">' . htmlspecialchars($quoteText) . '</p>
+                        
+
             ';
+
+    if ($pdf) {
+        $html .= '
+            <div style="margin-top:20pt;">
+            ' . getSourcesTableHTML($leads_sources, $pdf) . '
+            </div>';
+    }
 
     // $charts по умолчанию [] — предупреждений при foreach(null) не будет
     foreach ($charts as $chart) {
@@ -638,12 +648,7 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
             ';
     }
 
-    if ($pdf) {
-        $html .= '
-            <div style="margin-top:20pt;">
-            ' . getSourcesTableHTML($leads_sources, $pdf) . '
-            </div>';
-    }
+
 
     if ($pdf) {
         $html .= ' <div style="margin-top:20pt; margin-bottom:30pt;">
@@ -892,7 +897,8 @@ function getManagersHTML($data, ?mysqli $connection = null)
                   <td class="small">' . ($mData['COUNT_IN_WORK_LEADS'] ?? 0) . '</td>
                   <td class="small">' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
                   <td class="small">' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
-                  <td class="small">' . ($mData['AVG_TIME']            ?? 0) . '</td>
+                  <td class="small">' . ($mData['AVG_TIME']            ?? '0 ч. 0 мин.') . '</td>
+                  <td class="small">' . ($mData['TOTAL_TIME']          ?? '0 ч 0 мин') . '</td>
               </tr>';
         }
         $k++;
