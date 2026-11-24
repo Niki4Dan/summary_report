@@ -586,15 +586,17 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
         <td class="th" rowspan="2">Ответственный</td>
         <td class="th" rowspan="2" style="width:50px;">Общее число</td>
         <td class="th" colspan="3">Качеств.</td>
-         <td class="th" rowspan="2">В&nbsp;ожид.</td>
+        <td class="th" colspan="2">В&nbsp;ожидании</td>
         <td class="th" rowspan="2">Не&nbsp;обраб.</td>
         <td class="th" rowspan="2">Нецелев.</td>
         <td class="th" colspan="2">Время обработки</td>
     </tr>
     <tr>
-            <td class="th">I</td>
+        <td class="th">I</td>
         <td class="th">II</td>
         <td class="th">III</td>
+        <td class="th">ФЛ</td>
+        <td class="th">Клиент</td>
         <td class="th" style="width:80px;">Среднее</td>
         <td class="th" style="width:80px;">Общее</td>
     </tr>
@@ -881,6 +883,20 @@ function getManagersHTML($data, ?mysqli $connection = null)
             $mStage    = $stageCountsByManager['MANAGERS'][$manager['ID']]     ?? ['STAGE2' => 0, 'STAGE3' => 0];
             $mContacts = $contactsCountsByManager['MANAGERS'][$manager['ID']]  ?? 0;
 
+            // Форматирование ФИО: Фамилия И.О.
+            $lastName   = trim($manager['LAST_NAME'] ?? '');
+            $firstName  = trim($manager['NAME'] ?? '');
+            $secondName = trim($manager['SECOND_NAME'] ?? '');
+
+            $initials = '';
+            if ($firstName !== '') {
+                $initials .= mb_substr($firstName, 0, 1, 'UTF-8') . '.';
+            }
+            if ($secondName !== '') {
+                $initials .= mb_substr($secondName, 0, 1, 'UTF-8') . '.';
+            }
+            $shortFio = trim($lastName . ' ' . $initials);
+
             $managersHtml .= '<tr class="' . $groupClass . '">';
 
             if ($first) {
@@ -888,18 +904,18 @@ function getManagersHTML($data, ?mysqli $connection = null)
                 $first = false;
             }
 
-            $managersHtml .= '<td class="left small">' . $manager['LAST_NAME'] . ' ' . $manager['NAME'] . ' ' . $manager['SECOND_NAME'] . '</td>
-                  <td class="small">' . ($mData['COUNT_LEADS']        ?? 0) . '</td>
-                  <td class="small">' . $mContacts                           . '</td>
-                  <td class="small">' . ($mStage['STAGE2']             ?? 0) . '</td>
-                  <td class="small">' . ($mStage['STAGE3']             ?? 0) . '</td>
-                  
-                  <td class="small">' . ($mData['COUNT_IN_WORK_LEADS'] ?? 0) . '</td>
-                  <td class="small">' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
-                  <td class="small">' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
-<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['AVG_TIME']   ?? '')) . '</td>
-<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['TOTAL_TIME'] ?? '')) . '</td>
-              </tr>';
+            $managersHtml .= '<td class="left small">' . htmlspecialchars($shortFio) . '</td>
+          <td class="small">' . ($mData['COUNT_LEADS']        ?? 0) . '</td>
+          <td class="small">' . $mContacts                           . '</td>
+          <td class="small">' . ($mStage['STAGE2']             ?? 0) . '</td>
+          <td class="small">' . ($mStage['STAGE3']             ?? 0) . '</td>
+          <td class="small">' . ($mData['AWAIT_MANAGERS']     ?? 0) . '</td>
+          <td class="small">' . ($mData['AWAIT_CLIENTS']      ?? 0) . '</td>
+          <td class="small">' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
+          <td class="small">' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
+          <td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['AVG_TIME']   ?? '')) . '</td>
+          <td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['TOTAL_TIME'] ?? '')) . '</td>
+      </tr>';
         }
         $k++;
     }
@@ -1593,6 +1609,9 @@ function getLeadsAndDealsByManagers($dateStart, $dateEnd)
         $manager['COUNT_FAILED_LEADS']  = $countFailed;
         $manager['COUNT_IN_WORK_LEADS'] = $countInWork;
         $manager['COUNT_NEW_LEADS']     = $countNew;
+        $manager['AWAIT_MANAGERS']      = $countManagers;
+        $manager['AWAIT_CLIENTS']       = $countClients;
+
 
         $leads['COUNT_SUCCESS_LEADS'] += $countSuccess;
         $leads['COUNT_FAILED_LEADS']  += $countFailed;
