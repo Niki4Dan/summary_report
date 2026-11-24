@@ -152,7 +152,7 @@ function getIsLeader($dep, $manager)
 }
 
 
-function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $pdf = false, ?mysqli $connection = null, $userIdsJson = null)
+function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $pdf = false, $script = false, ?mysqli $connection = null, $userIdsJson = null)
 {
     $selectedDate = isset($_GET['date_start']) ? $data[0] : $data[1];
 
@@ -194,13 +194,13 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
         + ($stageCounts['by_stage']['C29:EXECUTING']['count']     ?? 0)
         + ($stageCounts['by_stage']['C29:FINAL_INVOICE']['count'] ?? 0);
 
-    if ($pdf && !$isScript) {
-        $columnTitleVP   = '<td rowspan="6">С<br>т<br>а<br>д<br>и<br>и<br><span style="margin-top:10px;">ВП</span></td>';
-        $lineheighttitle = '12pt';
-    } else {
-        $columnTitleVP   = '<td rowspan="6" style="transform:rotate(-90deg);">Стадии ВП</td>';
-        $lineheighttitle = '18pt';
-    }
+if ($pdf && !$isScript) {
+    $columnTitleVP   = '<td rowspan="6">С<br>т<br>а<br>д<br>и<br>и<br><span style="margin-top:10px;">ВП</span></td>';
+    $lineheighttitle = '14pt';
+} else {
+    $columnTitleVP   = '<td rowspan="6" style="transform:rotate(-90deg);">Стадии ВП</td>';
+    $lineheighttitle = '20pt';
+}
 
     // ------------------------------------------------------------------
     // Заголовок. В script/PDF-режиме (в т.ч. запуск из консоли) используем
@@ -213,8 +213,8 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
     $titlePeriodEnd   = (new DateTime($selectedDate['date_end']))->format('d.m.Y');
 
     if ($isScript) {
-        $titleHtml = '<div class="title">Сводный отчет по входящим лидам за период с '
-            . $titlePeriodStart . ' (00:00) по ' . $titlePeriodEnd . ' (23:59)</div>';
+        $titleHtml = '<div class="title">Сводный отчет по входящим лидам за&nbsp;период&nbsp;с&nbsp;'
+            . $titlePeriodStart . '&nbsp;(00:00)&nbsp;по&nbsp;' . $titlePeriodEnd . '&nbsp;(23:59)</div>';
     } else {
         $titleHtml = '<div class="title">Сводный отчет по входящим лидам за&nbsp;период&nbsp;с&nbsp;'
             . $titlePeriodStart . '&nbsp;(00:00)&nbsp;по&nbsp;' . $titlePeriodEnd . '&nbsp;(23:59)</div>';
@@ -232,27 +232,27 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
             @media print {
             .svod td{
                         font-size: 10pt !important;
-                        padding: 8px !important;
+                        padding: 3px !important;
                             }
             .svod th {
                 font-size: 12pt !important;
-                padding: 8px !important;
+                padding: 3px !important;
             }
 
             .managers_table td {
                 font-size: 10pt !important;
-                padding: 8px !important;
+                padding: 3px !important;
             }
 
             .managers_table th {
                 font-size: 12pt !important;
-                padding: 8px !important;
+                padding: 3px !important;
             }
 
             .title{
                 font-size:24pt !important;
                 margin-bottom:10px;
-                line-height: 12pt !important;
+                line-height: 32pt !important;
             }
 
             .quote{
@@ -516,7 +516,7 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
 <table class="legend_table">
   <thead>
     <tr>
-      <th style="line-height:6pt;">Стадии<br>воронки</th>
+      <th>Стадии<br>воронки</th>
       <th>Описание</th>
       <th>Состав</th>
     </tr>
@@ -583,7 +583,7 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
 <table class="managers_table">
     <tr>
         <td class="th" rowspan="2">№</td>
-        <td class="th" rowspan="2">Ответственный</td>
+        <td class="th" rowspan="2" style="white-space: nowrap;">Ответственный</td>
         <td class="th" rowspan="2" style="width:50px;">Общее число</td>
         <td class="th" colspan="3">Качеств.</td>
          <td class="th" rowspan="2">В&nbsp;ожид.</td>
@@ -650,7 +650,7 @@ function getHtml($managersHtml, $data, $tablekp, $leads_sources, $charts = [], $
 
 
 
-    if ($pdf) {
+    if ($pdf  && !$script) {
         $html .= ' <div style="margin-top:20pt; margin-bottom:30pt;">
                 <div class="table-wrapper">
                     <h3 style="text-align:center; margin-bottom:8pt;' . $fontsize . '">Статистика по выставленным КП*</h3>
@@ -884,21 +884,21 @@ function getManagersHTML($data, ?mysqli $connection = null)
             $managersHtml .= '<tr class="' . $groupClass . '">';
 
             if ($first) {
-                $managersHtml .= '<td rowspan="' . $rowspan . '" class="group">' . $k . '</td>';
+                $managersHtml .= '<td rowspan="' . $rowspan . '" class="group" style="white-space: nowrap; width:1px;">' . $k . '</td>';
                 $first = false;
             }
 
-            $managersHtml .= '<td class="left small">' . $manager['LAST_NAME'] . ' ' . $manager['NAME'] . ' ' . $manager['SECOND_NAME'] . '</td>
+            $managersHtml .= '<td class="left small" style="">' . $manager['LAST_NAME'] . ' ' . $manager['NAME'] . ' ' . $manager['SECOND_NAME'] . '</td>
                   <td class="small">' . ($mData['COUNT_LEADS']        ?? 0) . '</td>
-                  <td class="small">' . $mContacts                           . '</td>
-                  <td class="small">' . ($mStage['STAGE2']             ?? 0) . '</td>
-                  <td class="small">' . ($mStage['STAGE3']             ?? 0) . '</td>
+                  <td class="small" style="white-space: nowrap; width:1px;">' . $mContacts                           . '</td>
+                  <td class="small" style="white-space: nowrap; width:1px;">' . ($mStage['STAGE2']             ?? 0) . '</td>
+                  <td class="small" style="white-space: nowrap; width:1px;">' . ($mStage['STAGE3']             ?? 0) . '</td>
                   
-                  <td class="small">' . ($mData['COUNT_IN_WORK_LEADS'] ?? 0) . '</td>
-                  <td class="small">' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
-                  <td class="small">' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
-<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['AVG_TIME']   ?? '')) . '</td>
-<td class="small" style="font-size:8px;">' . formatTime(parseFormattedTimeToMinutes($mData['TOTAL_TIME'] ?? '')) . '</td>
+                  <td class="small" >' . ($mData['COUNT_IN_WORK_LEADS'] ?? 0) . '</td>
+                  <td class="small" >' . ($mData['COUNT_NEW_LEADS']     ?? 0) . '</td>
+                  <td class="small" >' . ($mData['COUNT_FAILED_LEADS']  ?? 0) . '</td>
+<td class="small" style="white-space: nowrap; width:1px;">' . formatTime(parseFormattedTimeToMinutes($mData['AVG_TIME']   ?? '')) . '</td>
+<td class="small" style=" white-space: nowrap; width:1px; ">' . formatTime(parseFormattedTimeToMinutes($mData['TOTAL_TIME'] ?? '')) . '</td>
               </tr>';
         }
         $k++;
@@ -1134,7 +1134,8 @@ function saveChartsToPDF($charts, $data, $leads_sources)
             $leads_sources,
             $charts,
             true,
-            null,
+            false,
+            $connection,
             $userIdsJson
         );
 

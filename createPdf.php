@@ -6,9 +6,7 @@ define('NO_KEEP_STATISTIC', true);
 define('NO_AGENT_CHECK', true);
 define('NO_LANG_FILES', true);
 
-if(isset($_GET['pdf']) || isset($_GET['script'])){
-    define("NOT_CHECK_PERMISSIONS", true);
-}
+
 
 $GLOBALS['RAW_POST_BODY'] = file_get_contents('php://input');
 require($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
@@ -26,6 +24,16 @@ if (isset($_GET['pdf'])) {
     }
 } else {
     $isPdf = false;
+}
+
+if (isset($_GET['script'])) {
+    if ($_GET['script'] == 1) {
+        $isScript = true;
+    } else {
+        $isScript = false;
+    }
+} else {
+    $isScript = false;
 }
 
 
@@ -784,6 +792,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $sources,
             [],
             $isPdf,
+            $isScript,
             $connection,
             $userIdsJson
         );
@@ -889,11 +898,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                         ?>
 
                         <?= $htmlReport  ?>
-                        <? if ($isWeb) { ?>
-                            <div style="margin-top:20pt;">
-                                <?= getSourcesTableHTML($sources, false) ?>
-                            </div>
-                        <? } ?>
+                        <div style="margin-top:20pt;">
+                            <?= getSourcesTableHTML($sources, false) ?>
+                        </div>
                         <div class="no-parted pb-before pb-inside">
                             <h3 style="text-align: center;">Динамика количества лидов</h3>
                             <div class="chart-wrapper" style="padding-top:0;">
@@ -1084,9 +1091,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 
                         <?= $htmlReport  ?>
-                        <div style="margin-top:20pt;">
-                            <?= getSourcesTableHTML($sources, false) ?>
-                        </div>
+
                         <table style="padding: 0; border:none; ">
                             <tr style="padding: 0; border:none;">
                                 <td style="padding: 0; width:65%; border:none; vertical-align:top;">
